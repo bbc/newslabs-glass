@@ -21,9 +21,7 @@ public class MainService extends Service {
     private final IBinder mBinder = new MainBinder();
 
     public class MainBinder extends Binder {
-        public void sayHiLoudly() {
-            mSpeech.speak(getString(R.string.app_name), TextToSpeech.QUEUE_FLUSH, null);
-        }
+    	
     }
 
     @Override

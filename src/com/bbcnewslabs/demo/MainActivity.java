@@ -1,6 +1,17 @@
 package com.bbcnewslabs.demo;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.google.android.glass.timeline.LiveCard;
 
@@ -9,6 +20,7 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.speech.RecognizerIntent;
@@ -28,6 +40,7 @@ public class MainActivity extends Activity {
     private static final int SPEECH_REQUEST = 0;
     private static final int RESULT_OK = 1;
     private TextToSpeech mSpeech;
+    private String apiKey = "yD21N69ilVPsRAQICpFmEF8IWkMPfga0";
     
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -131,19 +144,22 @@ public class MainActivity extends Activity {
 
             // Confirm back to the user what they asked for news about via text-to-speech
             mSpeech.speak("You asked for news about "+spokenText, TextToSpeech.QUEUE_FLUSH, null);
-
-            // Display back to the user what the asked for news about on screen, as text 
-            RemoteViews aRV = new RemoteViews(this.getPackageName(),R.layout.card_text);
-            if (mLiveCard == null) {
-                mLiveCard = new LiveCard(this, "response");
-                aRV.setTextViewText(R.id.main_text, "You asked for news about: "+spokenText);
-                mLiveCard.setViews(aRV);
-                Intent mIntent = new Intent(this, MainActivity.class);
-                mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                mLiveCard.setAction(PendingIntent.getActivity(this, 0, mIntent, 0));
-                mLiveCard.publish(LiveCard.PublishMode.REVEAL);
-            }
             
+            String escapedSpokenText = "Breaking news";
+			try {
+				escapedSpokenText = java.net.URLEncoder.encode(spokenText, "utf-8");
+			} catch (UnsupportedEncodingException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			
+            // Set the URL
+            String url = "http://data.bbc.co.uk/bbcrd-juicer/articles.json?text="+escapedSpokenText+"&product[]=NewsWeb&content_format[]=TextualFormat&apikey="+apiKey;
+            
+            // Get news
+            RequestTask rq = new RequestTask();
+	        rq.setActivity(this);
+	        rq.execute(url);
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
