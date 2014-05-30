@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">HelloWorld</string>
+    <string name="hello">Hi I am Google Glass</string>
+    <string name="speech_input">Get headlines</string>
+    <string name="show_helloworld_voice_trigger">Hello World</string>
+    <string name="read_aloud">Say Hi</string>
+    <string name="stop">stop app</string>
+</resources>
