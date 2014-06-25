@@ -20,6 +20,10 @@
         android:title="@string/speech_input"
         android:icon="@drawable/ic_launcher"/>
     <item
+        android:id="@+id/record_video"
+        android:title="@string/record_video"
+        android:icon="@drawable/ic_launcher"/>
+    <item
         android:id="@+id/stop"
         android:title="@string/stop"
         android:icon="@drawable/ic_launcher"/>

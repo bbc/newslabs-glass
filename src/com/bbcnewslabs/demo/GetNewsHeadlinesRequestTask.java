@@ -18,15 +18,11 @@ import com.google.android.glass.timeline.LiveCard;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.speech.tts.TextToSpeech;
 import android.widget.RemoteViews;
 
-class RequestTask extends AsyncTask<String, String, String>{
+class GetNewsHeadlinesRequestTask extends AsyncTask<String, String, String>{
 
     private LiveCard mLiveCard;
-    private static final int SPEECH_REQUEST = 0;
-    private static final int RESULT_OK = 1;
-    private TextToSpeech mSpeech;
     private MainActivity activity;
     
     public void setActivity(MainActivity a) {

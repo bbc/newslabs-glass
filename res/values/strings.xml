@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">BBC News Labs Demo</string>
     <string name="speech_input">Tap for headlines</string>
+	<string name="record_video">Record video</string>
     <string name="app_voice_trigger">SHOW_ME_THE_NEWS</string>
     <string name="stop">Quit</string>
 </resources>

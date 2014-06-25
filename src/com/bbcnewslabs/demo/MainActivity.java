@@ -1,33 +1,19 @@
 package com.bbcnewslabs.demo;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-
-import com.google.android.glass.timeline.LiveCard;
-
 import android.app.Activity;
-import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.AsyncTask;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.RemoteViews;
 
 /**
  * MainActivity
@@ -36,11 +22,10 @@ public class MainActivity extends Activity {
 
     private boolean mResumed;
     private MainService.MainBinder mService;
-    private LiveCard mLiveCard;
-    private static final int SPEECH_REQUEST = 0;
-    private static final int RESULT_OK = 1;
     private TextToSpeech mSpeech;
     private String apiKey = "yD21N69ilVPsRAQICpFmEF8IWkMPfga0";
+    private static final int SPEECH_REQUEST = 0;
+    private static final int REQUEST_VIDEO_CAPTURE = 1;
     
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -110,6 +95,9 @@ public class MainActivity extends Activity {
             case R.id.speech_input:
                 displaySpeechRecognizer();
                 return true;
+            case R.id.record_video:
+            	startRecordingVideo();
+                return true;
             case R.id.stop:
                 stopService(new Intent(this, MainService.class));
                 finish();
@@ -125,18 +113,29 @@ public class MainActivity extends Activity {
         unbindService(mConnection);
     }
 
+    private void startRecordingVideo() {
+        Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(intent, REQUEST_VIDEO_CAPTURE);
+        }    
+    }
+    
     private void displaySpeechRecognizer() {
     	mSpeech.speak("What would you like to know more about?", TextToSpeech.QUEUE_FLUSH, null);
+    	try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         startActivityForResult(intent, SPEECH_REQUEST);
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode,
-            Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
     	//
         if (requestCode == SPEECH_REQUEST ) { // && resultCode == RESULT_OK) {
-            List<String> results = data.getStringArrayListExtra(
+            List<String> results = intent.getStringArrayListExtra(
                     RecognizerIntent.EXTRA_RESULTS);
             String spokenText = results.get(0);
             
@@ -156,11 +155,20 @@ public class MainActivity extends Activity {
             // Set the URL
             String url = "http://data.bbc.co.uk/bbcrd-juicer/articles.json?text="+escapedSpokenText+"&product[]=NewsWeb&content_format[]=TextualFormat&apikey="+apiKey;
             
-            // Get news
-            RequestTask rq = new RequestTask();
+            // Get news headlines
+            GetNewsHeadlinesRequestTask rq = new GetNewsHeadlinesRequestTask();
 	        rq.setActivity(this);
 	        rq.execute(url);
+	        
+        } else if (requestCode == REQUEST_VIDEO_CAPTURE) {        	
+            Uri videoUri = intent.getData();
+            
+            // @todo Upload video using HTTP 
+            UploadVideoRequestTask rq = new UploadVideoRequestTask();
+	        rq.setActivity(this);
+	        rq.execute( videoUri.toString() );
+
         }
-        super.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, intent);
     }
 }

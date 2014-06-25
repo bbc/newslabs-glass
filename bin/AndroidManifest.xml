@@ -7,7 +7,10 @@
      android:name="com.google.android.glass.permission.DEVELOPMENT" />
     
 	<uses-permission android:name="android.permission.INTERNET" />
-	
+
+	<uses-feature android:name="android.hardware.camera"
+                  android:required="true" />
+	    	
     <uses-sdk
         android:minSdkVersion="15"
         android:targetSdkVersion="19" />
