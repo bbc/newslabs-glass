@@ -1,5 +1,7 @@
 package com.bbcnewslabs.demo;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 
 import org.apache.http.HttpResponse;
@@ -8,6 +10,8 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
 
 import com.google.android.glass.timeline.LiveCard;
 
@@ -28,32 +32,26 @@ class UploadVideoRequestTask extends AsyncTask<String, String, String>{
     
 	@Override
     protected String doInBackground(String... uri) {
-		// Upload video to server
-        HttpClient httpclient = new DefaultHttpClient();
-        HttpPost httppost = new HttpPost(HTTP_UPLOAD_URL);        
+		// Upload video to server	
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpPost httpPost = new HttpPost(HTTP_UPLOAD_URL);        
         HttpResponse response = null;
-        
+        MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();        
         try {
-        	// @todo Get stream for video from uri, add stream to http post
-            response = httpclient.execute( httppost );
-            response.getEntity().getContent().close();
+        	multipartEntityBuilder.addPart("file", new FileBody(new File(uri[0])));        
+            httpPost.setEntity( multipartEntityBuilder.build() );
+        	response = httpClient.execute( httpPost );
+        	ByteArrayOutputStream out = new ByteArrayOutputStream();
+            response.getEntity().writeTo(out);
+            out.close();
+            return out.toString();
         } catch (ClientProtocolException e) {
-            //TODO Handle problems..
         	return "ClientProtocolException: "+e.getMessage();
         } catch (IOException e) {
-            //TODO Handle problems..
-        	if (response != null){
-        	    StatusLine statusLine = response.getStatusLine();
-        	    return statusLine.getStatusCode()+":"+uri[0];
-        	} else {
-        		return uri[0];
-        	}
-        	//return "IOException: "+e.getMessage();
+            return "IOException: "+e.getMessage();
         } catch (Exception e) {
         	return "Other Exception: "+e.getMessage();
         }
-        
-		return uri[0];
 	}
 	
     @Override
@@ -64,7 +62,7 @@ class UploadVideoRequestTask extends AsyncTask<String, String, String>{
         RemoteViews aRV = new RemoteViews(activity.getPackageName(),R.layout.card_text);
         if (mLiveCard == null) {
             mLiveCard = new LiveCard(activity, "response");           
-            aRV.setTextViewText(R.id.main_text, "Video saved to "+result);
+            aRV.setTextViewText(R.id.main_text, result);
             mLiveCard.setViews(aRV);
             Intent mIntent = new Intent(activity, MainActivity.class);
             mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
