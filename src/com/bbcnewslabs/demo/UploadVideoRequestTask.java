@@ -24,26 +24,33 @@ class UploadVideoRequestTask extends AsyncTask<String, String, String>{
 	
     private LiveCard mLiveCard;
     private MainActivity activity;
-    private static final String HTTP_UPLOAD_URL = "http://localhost/~iain/video/upload.php";
+    private static final String HTTP_UPLOAD_URL = "http://10.100.85.187/~iain/video/upload.php";
     
     public void setActivity(MainActivity a) {
+    	System.out.println("In setActivity...");
     	activity = a;
     }
     
 	@Override
     protected String doInBackground(String... uri) {
+		System.out.println("In doInBackground...");
 		// Upload video to server	
         HttpClient httpClient = new DefaultHttpClient();
         HttpPost httpPost = new HttpPost(HTTP_UPLOAD_URL);        
         HttpResponse response = null;
-        MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();        
         try {
+        	System.out.println("Attempting to create MultipartEntityBuilder ...");
+        	MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
+        	System.out.println("Adding file to upload...");
         	multipartEntityBuilder.addPart("file", new FileBody(new File(uri[0])));        
             httpPost.setEntity( multipartEntityBuilder.build() );
+            System.out.println("Uploading file...");
         	response = httpClient.execute( httpPost );
+        	System.out.println("File uploaded.");
         	ByteArrayOutputStream out = new ByteArrayOutputStream();
             response.getEntity().writeTo(out);
             out.close();
+            System.out.println("File uploaded, response received.");
             return out.toString();
         } catch (ClientProtocolException e) {
         	return "ClientProtocolException: "+e.getMessage();
@@ -51,7 +58,7 @@ class UploadVideoRequestTask extends AsyncTask<String, String, String>{
             return "IOException: "+e.getMessage();
         } catch (Exception e) {
         	return "Other Exception: "+e.getMessage();
-        }
+        }        
 	}
 	
     @Override

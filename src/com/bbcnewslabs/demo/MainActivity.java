@@ -2,6 +2,7 @@ package com.bbcnewslabs.demo;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -114,6 +115,7 @@ public class MainActivity extends Activity {
     }
 
     private void startRecordingVideo() {
+    	System.out.println("In startRecordingVideo...");
         Intent intent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
         if (intent.resolveActivity(getPackageManager()) != null) {
             startActivityForResult(intent, REQUEST_VIDEO_CAPTURE);
@@ -133,42 +135,47 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-    	//
-        if (requestCode == SPEECH_REQUEST ) { // && resultCode == RESULT_OK) {
-            List<String> results = intent.getStringArrayListExtra(
-                    RecognizerIntent.EXTRA_RESULTS);
-            String spokenText = results.get(0);
-            
-            // Do something with spokenText.
-
-            // Confirm back to the user what they asked for news about via text-to-speech
-            mSpeech.speak("You asked for news about "+spokenText, TextToSpeech.QUEUE_FLUSH, null);
-            
-            String escapedSpokenText = "Breaking news";
-			try {
-				escapedSpokenText = java.net.URLEncoder.encode(spokenText, "utf-8");
-			} catch (UnsupportedEncodingException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			
-            // Set the URL
-            String url = "http://data.bbc.co.uk/bbcrd-juicer/articles.json?text="+escapedSpokenText+"&product[]=NewsWeb&content_format[]=TextualFormat&apikey="+apiKey;
-            
-            // Get news headlines
-            GetNewsHeadlinesRequestTask rq = new GetNewsHeadlinesRequestTask();
-	        rq.setActivity(this);
-	        rq.execute(url);
-	        
-        } else if (requestCode == REQUEST_VIDEO_CAPTURE) {        	
-            Uri videoUri = intent.getData();
-            
-            // @todo Upload video using HTTP 
-            UploadVideoRequestTask rq = new UploadVideoRequestTask();
-	        rq.setActivity(this);
-	        rq.execute( videoUri.toString() );
-
+    	super.onActivityResult(requestCode, resultCode, intent);    	
+    	
+    	try {
+	        if (requestCode == SPEECH_REQUEST ) { // && resultCode == RESULT_OK) {
+	            List<String> results = intent.getStringArrayListExtra(
+	                    RecognizerIntent.EXTRA_RESULTS);
+	            String spokenText = results.get(0);
+	            
+	            // Do something with spokenText.
+	
+	            // Confirm back to the user what they asked for news about via text-to-speech
+	            mSpeech.speak("You asked for news about "+spokenText, TextToSpeech.QUEUE_FLUSH, null);
+	            
+	            String escapedSpokenText = "Breaking news";
+				try {
+					escapedSpokenText = java.net.URLEncoder.encode(spokenText, "utf-8");
+				} catch (UnsupportedEncodingException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+	            // Set the URL
+	            String url = "http://data.bbc.co.uk/bbcrd-juicer/articles.json?text="+escapedSpokenText+"&product[]=NewsWeb&content_format[]=TextualFormat&apikey="+apiKey;
+	            
+	            // Get news headlines
+	            GetNewsHeadlinesRequestTask rq = new GetNewsHeadlinesRequestTask();
+		        rq.setActivity(this);
+		        rq.execute(url);
+		        
+	        } else if (requestCode == REQUEST_VIDEO_CAPTURE) {	        	
+	        	String videoUri = intent.getExtras().getString(com.google.android.glass.content.Intents.EXTRA_VIDEO_FILE_PATH);
+	            System.out.println("Got Video URI: "+videoUri);
+	
+	            UploadVideoRequestTask rq = new UploadVideoRequestTask();
+		        rq.setActivity(this);
+		        rq.execute( videoUri );
+	        }
+        
+        } catch (Exception e) {
+        	System.out.println("EXCEPTION: "+e.getMessage() );
+        	System.out.println("EXCEPTION AS STRING: "+e.toString() );
         }
-        super.onActivityResult(requestCode, resultCode, intent);
     }
 }
