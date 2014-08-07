@@ -18,6 +18,7 @@ import com.google.android.glass.timeline.LiveCard;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.speech.tts.TextToSpeech;
 import android.widget.RemoteViews;
 
 class SearchNewsTask extends AsyncTask<String, String, String> {
@@ -91,20 +92,21 @@ class SearchNewsTask extends AsyncTask<String, String, String> {
         RemoteViews aRV = new RemoteViews(activity.getPackageName(),R.layout.headline_search_result);
         if (mLiveCard == null) {
             mLiveCard = new LiveCard(activity, "headline");           
-            aRV.setTextViewText(R.id.headline, headlines[0]);
-            aRV.setTextViewText(R.id.source, "BBC News");
+            aRV.setTextViewText(R.id.headline, "");
+            aRV.setTextViewText(R.id.source, "");
             mLiveCard.setViews(aRV);
             Intent mIntent = new Intent(activity, MainActivity.class);
             mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             mLiveCard.setAction(PendingIntent.getActivity(activity, 0, mIntent, 0));
             mLiveCard.publish(LiveCard.PublishMode.REVEAL);
             
-            for (int i = 1; i < headlines.length; i++) {
+            for (int i = 0; i < headlines.length; i++) {
             	try {
-        			Thread.sleep(7000);
-        			if (!headlines[i].isEmpty())
-        				aRV.setTextViewText(R.id.headline, headlines[i]);
-        				mLiveCard.setViews(aRV);
+        			activity.mSpeech.speak(headlines[i], TextToSpeech.QUEUE_FLUSH, null);
+    				aRV.setTextViewText(R.id.headline, headlines[i]);
+    				aRV.setTextViewText(R.id.source, "BBC News");
+    				mLiveCard.setViews(aRV);
+        			Thread.sleep(10000);
         		} catch (InterruptedException e) {
         			e.printStackTrace();
         		}

@@ -129,7 +129,7 @@ public class MainActivity extends Activity {
     }
     
     private void displaySpeechRecognizer() {
-    	mSpeech.speak("What would you like to more about?", TextToSpeech.QUEUE_FLUSH, null);
+    	mSpeech.speak("What would you like to know more about?", TextToSpeech.QUEUE_FLUSH, null);
     	try {
 			Thread.sleep(1500);
 		} catch (InterruptedException e) {
@@ -160,8 +160,13 @@ public class MainActivity extends Activity {
 	            // Do something with spokenText.
 	
 	            // Confirm back to the user what they asked for news about via text-to-speech
-	            mSpeech.speak("The latest news about "+spokenText, TextToSpeech.QUEUE_FLUSH, null);
-	            
+	            mSpeech.speak("Here is the latest news about "+spokenText, TextToSpeech.QUEUE_FLUSH, null);
+	        	try {
+	    			Thread.sleep(1500);
+	    		} catch (InterruptedException e) {
+	    			e.printStackTrace();
+	    		}
+	        	
 	            String escapedSpokenText = "";
 				try {
 					escapedSpokenText = java.net.URLEncoder.encode(spokenText, "utf-8");
@@ -200,6 +205,8 @@ public class MainActivity extends Activity {
                 mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 mLiveCard.setAction(PendingIntent.getActivity(this, 0, mIntent, 0));
                 mLiveCard.publish(LiveCard.PublishMode.REVEAL);
+                
+                this.mSpeech.speak("Video upload complete", TextToSpeech.QUEUE_FLUSH, null);                
 	            
 	        }
 
