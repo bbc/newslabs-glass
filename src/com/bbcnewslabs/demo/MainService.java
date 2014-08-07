@@ -14,8 +14,6 @@ import android.widget.RemoteViews;
  */
 public class MainService extends Service {
 
-    private static final String LIVE_CARD_ID = "home";
-    private static final CharSequence INTRO = "BBC News Labs";
     private LiveCard mLiveCard;
     private TextToSpeech mSpeech;
     private final IBinder mBinder = new MainBinder();
@@ -37,11 +35,10 @@ public class MainService extends Service {
     
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        RemoteViews aRV = new RemoteViews(this.getPackageName(),
-                R.layout.card_text);
+        RemoteViews aRV = new RemoteViews(this.getPackageName(), R.layout.home);
         if (mLiveCard == null) {
-            mLiveCard = new LiveCard(this, LIVE_CARD_ID);
-            aRV.setTextViewText(R.id.main_text, INTRO);
+            mLiveCard = new LiveCard(this, "home");
+            aRV.setTextViewText(R.id.main_text, getString(R.string.app_name));
             mLiveCard.setViews(aRV);
             Intent mIntent = new Intent(this, MainActivity.class);
             mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

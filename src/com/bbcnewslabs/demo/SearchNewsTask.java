@@ -20,10 +20,11 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.widget.RemoteViews;
 
-class GetNewsHeadlinesRequestTask extends AsyncTask<String, String, String>{
+class SearchNewsTask extends AsyncTask<String, String, String> {
 
     private LiveCard mLiveCard;
     private MainActivity activity;
+    private String[] headlines = new String[5];
     
     public void setActivity(MainActivity a) {
     	activity = a;
@@ -44,11 +45,20 @@ class GetNewsHeadlinesRequestTask extends AsyncTask<String, String, String>{
                 out.close();
                 String httpResponse = out.toString();
                 
-                responseString = "Sorry unable to fetch news, please try again";
+                responseString = "Search failed, please try again";
                 JSONObject jsonObject = new JSONObject(httpResponse); 
                 JSONArray articles = jsonObject.getJSONArray("articles");
                 JSONObject article = articles.getJSONObject(0);                
                 responseString = article.getString("description");
+               
+                for (int i = 0; i < articles.length(); i++) {
+                	try {
+                		JSONObject a = articles.getJSONObject(i);
+                		if (i <= headlines.length)
+                			headlines[i] = new String(a.getString("description"));
+                	} catch (Exception e) { }
+                }
+                
             } else{
                 //Closes the connection.
                 response.getEntity().getContent().close();
@@ -69,24 +79,37 @@ class GetNewsHeadlinesRequestTask extends AsyncTask<String, String, String>{
         } catch (Exception e) {
         	return "Other Exception: "+e.getMessage();
         }
+        
         return responseString;
     }
 
     @Override
     protected void onPostExecute(String result) {
         super.onPostExecute(result);
-	       
+
         // Display back to the user what the asked for news about on screen, as text 
-        RemoteViews aRV = new RemoteViews(activity.getPackageName(),R.layout.card_text);
+        RemoteViews aRV = new RemoteViews(activity.getPackageName(),R.layout.headline_search_result);
         if (mLiveCard == null) {
-            mLiveCard = new LiveCard(activity, "response");           
-            aRV.setTextViewText(R.id.main_text, result);
+            mLiveCard = new LiveCard(activity, "headline");           
+            aRV.setTextViewText(R.id.headline, headlines[0]);
+            aRV.setTextViewText(R.id.source, "BBC News");
             mLiveCard.setViews(aRV);
             Intent mIntent = new Intent(activity, MainActivity.class);
             mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             mLiveCard.setAction(PendingIntent.getActivity(activity, 0, mIntent, 0));
             mLiveCard.publish(LiveCard.PublishMode.REVEAL);
+            
+            for (int i = 1; i < headlines.length; i++) {
+            	try {
+        			Thread.sleep(7000);
+        			if (!headlines[i].isEmpty())
+        				aRV.setTextViewText(R.id.headline, headlines[i]);
+        				mLiveCard.setViews(aRV);
+        		} catch (InterruptedException e) {
+        			e.printStackTrace();
+        		}
+            }
+            
         }
-        //Do anything with response..
     }
 }

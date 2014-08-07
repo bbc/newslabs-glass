@@ -16,8 +16,12 @@
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/speech_input"
-        android:title="@string/speech_input"
+        android:id="@+id/news_headlines"
+        android:title="@string/news_headlines"
+        android:icon="@drawable/ic_launcher"/>
+    <item
+        android:id="@+id/search_news"
+        android:title="@string/search_news"
         android:icon="@drawable/ic_launcher"/>
     <item
         android:id="@+id/record_video"

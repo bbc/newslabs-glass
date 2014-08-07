@@ -3,11 +3,13 @@ package com.bbcnewslabs.demo;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
+import com.google.android.glass.timeline.LiveCard;
+
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
@@ -15,6 +17,7 @@ import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.RemoteViews;
 
 /**
  * MainActivity
@@ -23,10 +26,11 @@ public class MainActivity extends Activity {
 
     private boolean mResumed;
     private MainService.MainBinder mService;
-    private TextToSpeech mSpeech;
-    private String apiKey = "yD21N69ilVPsRAQICpFmEF8IWkMPfga0";
-    private static final int SPEECH_REQUEST = 0;
-    private static final int REQUEST_VIDEO_CAPTURE = 1;
+    private String apiKey = "yD21N69ilVPsRAQICpFmEF8IWkMPfga0"; //@fixme should not be hard coded or in the repo!
+    public TextToSpeech mSpeech;
+    public static final int REQUEST_SEARCH_NEWS = 0;
+    public static final int REQUEST_VIDEO_CAPTURE = 1;
+    public static final int SAVE_VIDEO_RESPONSE = 2;
     
     private ServiceConnection mConnection = new ServiceConnection() {
 
@@ -44,7 +48,6 @@ public class MainActivity extends Activity {
         }
     };
 
-    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,7 +96,10 @@ public class MainActivity extends Activity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.speech_input:
+        	case R.id.news_headlines:
+        		displayLatestHeadlines();
+        		return true;
+            case R.id.search_news:
                 displaySpeechRecognizer();
                 return true;
             case R.id.record_video:
@@ -123,32 +129,40 @@ public class MainActivity extends Activity {
     }
     
     private void displaySpeechRecognizer() {
-    	mSpeech.speak("What would you like to know more about?", TextToSpeech.QUEUE_FLUSH, null);
+    	mSpeech.speak("What would you like to more about?", TextToSpeech.QUEUE_FLUSH, null);
     	try {
-			Thread.sleep(1000);
+			Thread.sleep(1500);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        startActivityForResult(intent, SPEECH_REQUEST);
+        startActivityForResult(intent, REQUEST_SEARCH_NEWS);
     }
 
+    private void displayLatestHeadlines() {
+    	mSpeech.speak("Here are the latest headlines", TextToSpeech.QUEUE_FLUSH, null);
+		// Get a recent article (may not actually be important breaking news!)
+		String url = "http://data.bbc.co.uk/bbcrd-juicer/articles.json?product[]=NewsWeb&content_format[]=TextualFormat&apikey="+apiKey;
+        SearchNewsTask rq = new SearchNewsTask();
+        rq.setActivity(this);
+        rq.execute(url);		        
+    }
+    
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
     	super.onActivityResult(requestCode, resultCode, intent);    	
     	
     	try {
-	        if (requestCode == SPEECH_REQUEST ) { // && resultCode == RESULT_OK) {
-	            List<String> results = intent.getStringArrayListExtra(
-	                    RecognizerIntent.EXTRA_RESULTS);
+    		if (requestCode == REQUEST_SEARCH_NEWS ) { // && resultCode == RESULT_OK) {
+	            List<String> results = intent.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
 	            String spokenText = results.get(0);
 	            
 	            // Do something with spokenText.
 	
 	            // Confirm back to the user what they asked for news about via text-to-speech
-	            mSpeech.speak("You asked for news about "+spokenText, TextToSpeech.QUEUE_FLUSH, null);
+	            mSpeech.speak("The latest news about "+spokenText, TextToSpeech.QUEUE_FLUSH, null);
 	            
-	            String escapedSpokenText = "Breaking news";
+	            String escapedSpokenText = "";
 				try {
 					escapedSpokenText = java.net.URLEncoder.encode(spokenText, "utf-8");
 				} catch (UnsupportedEncodingException e1) {
@@ -160,19 +174,35 @@ public class MainActivity extends Activity {
 	            String url = "http://data.bbc.co.uk/bbcrd-juicer/articles.json?text="+escapedSpokenText+"&product[]=NewsWeb&content_format[]=TextualFormat&apikey="+apiKey;
 	            
 	            // Get news headlines
-	            GetNewsHeadlinesRequestTask rq = new GetNewsHeadlinesRequestTask();
+	            SearchNewsTask rq = new SearchNewsTask();
 		        rq.setActivity(this);
 		        rq.execute(url);
-		        
 	        } else if (requestCode == REQUEST_VIDEO_CAPTURE) {	        	
 	        	String videoUri = intent.getExtras().getString(com.google.android.glass.content.Intents.EXTRA_VIDEO_FILE_PATH);
 	            System.out.println("Got Video URI: "+videoUri);
 	
-	            UploadVideoRequestTask rq = new UploadVideoRequestTask();
+	            UploadVideoTask rq = new UploadVideoTask();
 		        rq.setActivity(this);
 		        rq.execute( videoUri );
+	        } else if (requestCode == SAVE_VIDEO_RESPONSE) {
+
+	            List<String> results = intent.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+	            String spokenText = results.get(0);
+	            
+	            // Display back to the user what the asked for news about on screen, as text 
+	            RemoteViews aRV = new RemoteViews(this.getPackageName(), R.layout.video_upload);
+	            
+	            LiveCard mLiveCard = new LiveCard(this, "response");           
+                aRV.setTextViewText(R.id.title, spokenText);
+                aRV.setTextViewText(R.id.progress, "UPLOAD COMPLETE");
+                mLiveCard.setViews(aRV);
+                Intent mIntent = new Intent(this, MainActivity.class);
+                mIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                mLiveCard.setAction(PendingIntent.getActivity(this, 0, mIntent, 0));
+                mLiveCard.publish(LiveCard.PublishMode.REVEAL);
+	            
 	        }
-        
+
         } catch (Exception e) {
         	System.out.println("EXCEPTION: "+e.getMessage() );
         	System.out.println("EXCEPTION AS STRING: "+e.toString() );
